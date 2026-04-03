@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>💧 14-Day Hydration Challenge</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue:      #2B7FFF;
+  --blue-lt:   #E8F1FF;
+  --blue-dk:   #0A3D99;
+  --teal:      #0EA875;
+  --teal-lt:   #E3F9F0;
+  --teal-dk:   #065C40;
+  --amber:     #F59E0B;
+  --amber-lt:  #FEF3C7;
+  --red:       #EF4444;
+  --bg:        #F6F8FC;
+  --surface:   #FFFFFF;
+  --border:    #E2E8F0;
+  --text:      #0F172A;
+  --muted:     #64748B;
+  --hint:      #94A3B8;
+  --radius:    14px;
+  --radius-sm: 8px;
+  --shadow:    0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app { max-width: 440px; margin: 0 auto; padding: 0 16px 80px; }
+.screen { display: none; }
+.screen.active { display: block; }
+
+.header { padding: 28px 0 16px; text-align: center; }
+.header .logo { font-size: 42px; margin-bottom: 8px; }
+.header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
+.header p { font-size: 14px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+
+.tabs {
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.tab {
+  flex: 1; padding: 9px 4px; font-size: 13px; font-weight: 500;
+  text-align: center; border-radius: 10px; cursor: pointer;
+  border: none; background: transparent; color: var(--muted);
+  font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+}
+.tab.active { background: var(--blue); color: #fff; }
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0 4px;
+}
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 500; padding: 4px 10px;
+  border-radius: 99px;
+}
+.badge-blue { background: var(--blue-lt); color: var(--blue-dk); }
+
+.ring-wrap { display: flex; justify-content: center; padding: 8px 0 4px; }
+.ring { position: relative; width: 168px; height: 168px; }
+.ring svg { width: 168px; height: 168px; transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: var(--bg); stroke-width: 14; }
+.ring-fill {
+  fill: none; stroke: var(--blue); stroke-width: 14;
+  stroke-linecap: round;
+  stroke-dasharray: 472;
+  stroke-dashoffset: 472;
+  transition: stroke-dashoffset 0.55s cubic-bezier(.4,0,.2,1), stroke 0.3s;
+}
+.ring-center {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%); text-align: center;
+}
+.ring-oz { font-size: 30px; font-weight: 600; line-height: 1; letter-spacing: -1px; }
+.ring-goal { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.ring-pct { font-size: 12px; font-weight: 500; color: var(--muted); margin-top: 1px; }
+
+.goal-banner {
+  display: none; text-align: center; padding: 8px 12px;
+  background: var(--teal-lt); border-radius: var(--radius-sm);
+  color: var(--teal-dk); font-size: 13px; font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.section-lbl {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--hint); margin-bottom: 10px;
+}
+
+.quick-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 12px; }
+.qa {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 4px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: background 0.12s, border-color 0.12s; color: var(--text);
+}
+.qa:active { background: var(--blue-lt); border-color: var(--blue); }
+.qa .icon { font-size: 20px; }
+.qa .lbl { font-size: 12px; font-weight: 500; }
+
+.custom-row { display: flex; gap: 8px; }
+.custom-row input {
+  flex: 1; padding: 10px 12px; font-size: 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--text);
+  outline: none; transition: border-color 0.15s;
+}
+.custom-row input:focus { border-color: var(--blue); }
+
+.btn {
+  padding: 10px 18px; font-size: 14px; font-weight: 500;
+  border-radius: var(--radius-sm); cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: opacity 0.15s;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+}
+.btn:active { opacity: 0.7; }
+.btn-primary {
+  width: 100%; padding: 13px; font-size: 15px; font-weight: 600;
+  background: var(--blue); color: #fff; border: none;
+  border-radius: var(--radius); cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: opacity 0.15s;
+  letter-spacing: -0.1px;
+}
+.btn-primary:active { opacity: 0.85; }
+.btn-sm {
+  padding: 6px 12px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--border); border-radius: 99px;
+  background: var(--surface); color: var(--muted); cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.log-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.log-row:last-child { border-bottom: none; }
+.log-time { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 12px; }
+.log-oz { font-weight: 600; }
+.undo { font-size: 11px; color: var(--blue); padding: 3px 8px; border-radius: 99px; border: 1px solid var(--blue-lt); background: var(--blue-lt); cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+.setup-field { margin-bottom: 16px; }
+.setup-field label { font-size: 13px; font-weight: 500; color: var(--muted); display: block; margin-bottom: 7px; }
+.setup-field input {
+  width: 100%; padding: 12px 14px; font-size: 15px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--text); outline: none;
+  font-family: 'DM Sans', sans-serif; transition: border-color 0.15s;
+}
+.setup-field input:focus { border-color: var(--blue); }
+.goal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.goal-opt {
+  padding: 14px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  text-align: center; cursor: pointer; transition: all 0.15s;
+  background: var(--surface);
+}
+.goal-opt.selected { border-color: var(--blue); background: var(--blue-lt); }
+.goal-opt .go-oz { font-size: 16px; font-weight: 600; color: var(--text); }
+.goal-opt .go-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; box-shadow: var(--shadow); }
+.stat-n { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+.stat-l { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; margin: 8px 0; }
+.cal-day {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; font-size: 12px; font-weight: 500;
+}
+.cal-day.met { background: var(--teal-lt); color: var(--teal-dk); }
+.cal-day.partial { background: var(--blue-lt); color: var(--blue-dk); }
+.cal-day.missed { background: var(--bg); color: var(--hint); border: 1px solid var(--border); }
+.cal-day.today { outline: 2px solid var(--blue); outline-offset: 2px; }
+.cal-day.future { background: var(--bg); color: var(--border); }
+
+.bars { display: flex; align-items: flex-end; gap: 6px; height: 90px; margin: 10px 0 4px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; }
+.bar-val { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; }
+.bar-fill { width: 100%; border-radius: 4px 4px 0 0; min-height: 3px; }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+.legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+.lb-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-row.is-me { background: var(--blue-lt); margin: 0 -20px; padding: 10px 20px; border-radius: var(--radius-sm); border-bottom: none; }
+.lb-rank { font-size: 16px; width: 28px; flex-shrink: 0; text-align: center; }
+.lb-avatar {
+  width: 38px; height: 38px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; font-size: 13px; font-weight: 600;
+  flex-shrink: 0;
+}
+.lb-info { flex: 1; min-width: 0; }
+.lb-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.lb-score { text-align: right; flex-shrink: 0; }
+.lb-score-n { font-size: 15px; font-weight: 600; font-family: 'DM Mono', monospace; }
+.lb-score-l { font-size: 10px; color: var(--muted); }
+
+#toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #0F172A; color: #fff; padding: 10px 20px;
+  border-radius: 99px; font-size: 13px; font-weight: 500;
+  transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+  pointer-events: none; z-index: 9999; white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+#loading {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 9998; transition: opacity 0.3s;
+}
+#loading.hidden { opacity: 0; pointer-events: none; }
+#loading .spin {
+  width: 40px; height: 40px; border: 3px solid var(--border);
+  border-top-color: var(--blue); border-radius: 50%;
+  animation: spin 0.8s linear infinite; margin-bottom: 14px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-banner {
+  background: #FEF2F2; border: 1px solid #FECACA;
+  border-radius: var(--radius-sm); padding: 12px 14px;
+  font-size: 13px; color: #991B1B; margin-bottom: 14px; line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spin"></div>
+  <p style="font-size:14px;color:var(--muted)">Loading challenge…</p>
+</div>
+
+<div class="app">
+
+  <!-- SETUP SCREEN -->
+  <div id="screen-setup" class="screen">
+    <div class="header">
+      <div class="logo">💧</div>
+      <h1>14-Day Hydration Challenge</h1>
+      <p>Enter your name and set your daily water goal to join.</p>
+    </div>
+    <div id="db-error" class="error-banner" style="display:none">
+      ⚠️ Database not connected. Open <code>index.html</code> and paste your Supabase URL and key at the top of the script section.
+    </div>
+    <div class="card">
+      <div class="setup-field">
+        <label>Your name</label>
+        <input type="text" id="input-name" placeholder="e.g. Alex Johnson" maxlength="30" autocomplete="name" />
+      </div>
+      <div class="setup-field">
+        <label>Daily water goal</label>
+        <div class="goal-grid">
+          <div class="goal-opt" data-oz="64" onclick="selectGoal(this)">
+            <div class="go-oz">64 oz</div><div class="go-lbl">½ gallon</div>
+          </div>
+          <div class="goal-opt" data-oz="96" onclick="selectGoal(this)">
+            <div class="go-oz">96 oz</div><div class="go-lbl">¾ gallon</div>
+          </div>
+          <div class="goal-opt" data-oz="128" onclick="selectGoal(this)">
+            <div class="go-oz">128 oz</div><div class="go-lbl">1 gallon</div>
+          </div>
+          <div class="goal-opt" data-oz="custom" onclick="selectGoal(this)">
+            <div class="go-oz">Custom</div><div class="go-lbl">set my own</div>
+          </div>
+        </div>
+        <div id="custom-wrap" style="display:none;margin-bottom:10px">
+          <input type="number" id="input-custom" placeholder="Enter oz (e.g. 80)" min="16" max="300"
+            style="width:100%;padding:11px 13px;font-size:14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);outline:none;" />
+        </div>
+      </div>
+      <button class="btn-primary" onclick="startChallenge()">Join the challenge →</button>
+    </div>
+  </div>
+
+  <!-- TRACK SCREEN -->
+  <div id="screen-track" class="screen">
+    <div class="topbar">
+      <span class="badge badge-blue" id="day-badge">Day 1 of 14</span>
+      <button class="btn-sm" onclick="resetUser()">↩ Switch user</button>
+    </div>
+    <div class="header" style="padding-top:8px;text-align:left">
+      <h1 id="greeting">Good morning!</h1>
+      <p id="subhead" style="color:var(--muted);font-size:14px">Stay on track today 💧</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tab-today" onclick="showPane('today')">Today</button>
+      <button class="tab" id="tab-progress" onclick="showPane('progress')">Progress</button>
+      <button class="tab" id="tab-leaderboard" onclick="showPane('leaderboard')">Leaderboard</button>
+    </div>
+
+    <!-- TODAY -->
+    <div id="pane-today">
+      <div class="card">
+        <div class="ring-wrap">
+          <div class="ring">
+            <svg viewBox="0 0 168 168">
+              <circle class="ring-bg" cx="84" cy="84" r="75"/>
+              <circle class="ring-fill" id="ring-fill" cx="84" cy="84" r="75"/>
+            </svg>
+            <div class="ring-center">
+              <div class="ring-oz" id="ring-oz">0</div>
+              <div class="ring-goal" id="ring-goal">of 64 oz</div>
+              <div class="ring-pct" id="ring-pct">0%</div>
+            </div>
+          </div>
+        </div>
+        <div class="goal-banner" id="goal-banner">🎉 Daily goal achieved!</div>
+        <div class="section-lbl">Quick add</div>
+        <div class="quick-grid">
+          <button class="qa" onclick="addWater(8)"><span class="icon">🥃</span><span class="lbl">8 oz</span></button>
+          <button class="qa" onclick="addWater(12)"><span class="icon">🧃</span><span class="lbl">12 oz</span></button>
+          <button class="qa" onclick="addWater(16)"><span class="icon">🥤</span><span class="lbl">16 oz</span></button>
+          <button class="qa" onclick="addWater(24)"><span class="icon">🍶</span><span class="lbl">24 oz</span></button>
+        </div>
+        <div class="custom-row">
+          <input type="number" id="custom-oz" placeholder="Custom oz" min="1" max="200" />
+          <button class="btn" onclick="addCustomWater()">Add</button>
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span class="section-lbl" style="margin:0">Today's log</span>
+          <span style="font-size:11px;color:var(--muted)" id="log-count">0 entries</span>
+        </div>
+        <div id="water-log">
+          <div style="font-size:13px;color:var(--muted);text-align:center;padding:14px 0">Nothing logged yet — tap a button above!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div id="pane-progress" style="display:none">
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-n" id="s-met">0</div><div class="stat-l">Days met</div></div>
+        <div class="stat-box"><div class="stat-n" id="s-streak">0</div><div class="stat-l">Streak</div></div>
+        <div class="stat-box"><div class="stat-n" id="s-avg">0</div><div class="stat-l">Avg oz</div></div>
+      </div>
+      <div class="card">
+        <div class="section-lbl">14-day overview</div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--teal-lt);border:1px solid var(--teal)"></div>Goal met</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--blue-lt);border:1px solid var(--blue)"></div>Partial</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--bg);border:1px solid var(--border)"></div>Missed / future</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-lbl">Last 7 days (oz)</div>
+        <div class="bars" id="bar-chart"></div>
+        <div style="display:flex;gap:6px" id="bar-labels"></div>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div id="pane-leaderboard" style="display:none">
+      <div class="card" style="margin-bottom:10px">
+        <div class="section-lbl">Your rank</div>
+        <div id="my-rank">—</div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <span class="section-lbl" style="margin:0">All participants</span>
+          <span style="font-size:11px;color:var(--muted)" id="lb-count">0 people</span>
+        </div>
+        <div id="lb-list">
+          <div style="font-size:13px;color:var(--muted);text-align:center;padding:14px 0">Loading…</div>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--hint);text-align:center;margin-top:8px;padding:0 12px">
+        Ranked by total oz consumed across all 14 days.<br>Updates live as your teammates track.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── SUPABASE CONFIG — paste your values here ────────────────────────────────
+const SUPABASE_URL = 'https://gwidkhyyplzrnoalfnej.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3aWRraHl5cGx6cm5vYWxmbmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMjQ1NDQsImV4cCI6MjA5MDgwMDU0NH0.xEJPY7-qC6ruHUiR6SXPncKd-KuGeRm8VG7QgrkpHjk';
+// ─────────────────────────────────────────────────────────────────────────────
+
+const { createClient } = supabase;
+let sb = null;
+let realtimeChannel = null;
+
+function initSupabase() {
+  if (SUPABASE_URL.includes('PASTE') || SUPABASE_ANON_KEY.includes('PASTE')) {
+    document.getElementById('db-error').style.display = 'block';
+    return false;
+  }
+  sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  return true;
+}
+
+// ─── Local state ─────────────────────────────────────────────────────────────
+let S = { name:'', goal:64, startDate:null, days:{} };
+let selectedGoalOz = null;
+
+const AVATAR_COLORS = [
+  ['#DBEAFE','#1E40AF'],['#D1FAE5','#065F46'],['#FEE2E2','#991B1B'],
+  ['#FEF3C7','#92400E'],['#EDE9FE','#4C1D95'],['#FCE7F3','#831843'],
+  ['#ECFDF5','#064E3B'],['#FFF7ED','#7C2D12']
+];
+
+function getTodayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function getDayNum() {
+  if (!S.startDate) return 1;
+  const diff = Math.floor((Date.now() - new Date(S.startDate)) / 86400000) + 1;
+  return Math.min(Math.max(diff, 1), 14);
+}
+function getInitials(n) { return n.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?'; }
+function colorFor(name) { return AVATAR_COLORS[name.length % AVATAR_COLORS.length]; }
+
+// ─── Toast ───────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ─── Local storage ───────────────────────────────────────────────────────────
+function saveLocal() { localStorage.setItem('hydration_sb_v1', JSON.stringify(S)); }
+function loadLocal() {
+  try { const r = localStorage.getItem('hydration_sb_v1'); if (r) S = JSON.parse(r); } catch(e) {}
+}
+
+// ─── Supabase: upsert participant row ─────────────────────────────────────────
+async function sbSaveParticipant() {
+  if (!sb) return;
+  const total = Object.values(S.days).reduce((a,d) => a+(d.oz||0), 0);
+  const met = Object.values(S.days).filter(d => d.oz >= S.goal).length;
+  const { error } = await sb.from('participants').upsert({
+    name: S.name,
+    goal_oz: S.goal,
+    total_oz: total,
+    days_met: met,
+    start_date: S.startDate,
+    days_data: S.days,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'name' });
+  if (error) console.error('Supabase save error:', error.message);
+}
+
+// ─── Supabase: fetch all participants for leaderboard ─────────────────────────
+async function sbLoadLeaderboard() {
+  if (!sb) return [];
+  const { data, error } = await sb
+    .from('participants')
+    .select('name, goal_oz, total_oz, days_met')
+    .order('total_oz', { ascending: false });
+  if (error) { console.error('Leaderboard fetch error:', error.message); return []; }
+  return data || [];
+}
+
+// ─── Supabase: subscribe to realtime leaderboard updates ─────────────────────
+function subscribeLeaderboard() {
+  if (!sb || realtimeChannel) return;
+  realtimeChannel = sb.channel('leaderboard-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'participants' }, () => {
+      if (document.getElementById('pane-leaderboard').style.display !== 'none') {
+        updateLeaderboardUI();
+      }
+    })
+    .subscribe();
+}
+
+// ─── Setup UI ────────────────────────────────────────────────────────────────
+function selectGoal(el) {
+  document.querySelectorAll('.goal-opt').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  const oz = el.dataset.oz;
+  if (oz === 'custom') {
+    document.getElementById('custom-wrap').style.display = 'block';
+    selectedGoalOz = 'custom';
+  } else {
+    document.getElementById('custom-wrap').style.display = 'none';
+    selectedGoalOz = parseInt(oz);
+  }
+}
+
+async function startChallenge() {
+  const name = document.getElementById('input-name').value.trim();
+  if (!name) { toast('Please enter your name'); return; }
+  let goal = selectedGoalOz;
+  if (!goal) { toast('Please select a daily goal'); return; }
+  if (goal === 'custom') {
+    goal = parseInt(document.getElementById('input-custom').value);
+    if (!goal || goal < 16) { toast('Enter a valid goal (min 16 oz)'); return; }
+  }
+  S.name = name; S.goal = goal;
+  S.startDate = new Date().toISOString();
+  const key = getTodayKey();
+  S.days = {}; S.days[key] = { oz:0, log:[] };
+  saveLocal();
+  await sbSaveParticipant();
+  subscribeLeaderboard();
+  showTrack();
+  toast("You're in! Stay hydrated 💧");
+}
+
+function resetUser() {
+  if (!confirm("Switch user? Your data is saved — rejoin anytime with the same name.")) return;
+  if (realtimeChannel && sb) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
+  S = { name:'', goal:64, startDate:null, days:{} };
+  saveLocal();
+  document.getElementById('screen-track').classList.remove('active');
+  document.getElementById('screen-setup').classList.add('active');
+}
+
+// ─── Track screen ────────────────────────────────────────────────────────────
+function showTrack() {
+  document.getElementById('screen-setup').classList.remove('active');
+  document.getElementById('screen-track').classList.add('active');
+  const key = getTodayKey();
+  if (!S.days[key]) S.days[key] = { oz:0, log:[] };
+  updateTodayUI();
+  subscribeLeaderboard();
+}
+
+// ─── Add water ───────────────────────────────────────────────────────────────
+async function addWater(oz) {
+  const key = getTodayKey();
+  if (!S.days[key]) S.days[key] = { oz:0, log:[] };
+  S.days[key].oz += oz;
+  const t = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  S.days[key].log.push({ oz, time: t });
+  saveLocal();
+  updateTodayUI();
+  await sbSaveParticipant();
+  toast(`+${oz} oz added!`);
+}
+
+function addCustomWater() {
+  const v = parseInt(document.getElementById('custom-oz').value);
+  if (!v || v < 1) { toast('Enter a valid amount'); return; }
+  document.getElementById('custom-oz').value = '';
+  addWater(v);
+}
+
+async function undoLog(i) {
+  const key = getTodayKey();
+  const e = S.days[key].log[i];
+  if (!e) return;
+  S.days[key].oz = Math.max(0, S.days[key].oz - e.oz);
+  S.days[key].log.splice(i, 1);
+  saveLocal();
+  updateTodayUI();
+  await sbSaveParticipant();
+  toast('Entry removed');
+}
+
+// ─── Today UI ────────────────────────────────────────────────────────────────
+function updateTodayUI() {
+  const key = getTodayKey();
+  const day = S.days[key] || { oz:0, log:[] };
+  const oz = day.oz, goal = S.goal;
+  const pct = Math.min(oz / goal, 1);
+  const circ = 2 * Math.PI * 75;
+
+  document.getElementById('ring-oz').textContent = oz;
+  document.getElementById('ring-goal').textContent = `of ${goal} oz`;
+  document.getElementById('ring-pct').textContent = Math.round(pct*100) + '%';
+  const ring = document.getElementById('ring-fill');
+  ring.style.strokeDashoffset = circ * (1 - pct);
+  ring.style.stroke = pct >= 1 ? 'var(--teal)' : 'var(--blue)';
+  document.getElementById('goal-banner').style.display = pct >= 1 ? 'block' : 'none';
+
+  const dayNum = getDayNum();
+  document.getElementById('day-badge').textContent = `Day ${dayNum} of 14`;
+  const hr = new Date().getHours();
+  const g = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greeting').textContent = `${g}, ${S.name.split(' ')[0]}!`;
+  const rem = Math.max(0, goal - oz);
+  document.getElementById('subhead').textContent = rem > 0
+    ? `${rem} oz to go today · Day ${dayNum} of 14`
+    : 'Daily goal crushed! 🏆';
+
+  const log = day.log || [];
+  document.getElementById('log-count').textContent = `${log.length} ${log.length===1?'entry':'entries'}`;
+  const logEl = document.getElementById('water-log');
+  if (!log.length) {
+    logEl.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:14px 0">Nothing logged yet — tap a button above!</div>';
+  } else {
+    logEl.innerHTML = [...log].reverse().map((e, ri) => {
+      const i = log.length - 1 - ri;
+      return `<div class="log-row"><span class="log-time">${e.time}</span><span class="log-oz">${e.oz} oz</span><button class="undo" onclick="undoLog(${i})">undo</button></div>`;
+    }).join('');
+  }
+}
+
+// ─── Progress UI ─────────────────────────────────────────────────────────────
+function updateProgressUI() {
+  const dayNum = getDayNum();
+  let met=0, streak=0, totalOz=0, count=0, streakOn=true;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  for (let d = 1; d <= 14; d++) {
+    const dt = new Date(S.startDate);
+    dt.setDate(dt.getDate() + d - 1);
+    const k = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+    const data = S.days[k];
+    const isToday = d === dayNum, isFuture = d > dayNum;
+    let cls = 'cal-day ';
+    if (isFuture) cls += 'future';
+    else if (!data || data.oz === 0) cls += 'missed';
+    else if (data.oz >= S.goal) { cls += 'met'; met++; }
+    else cls += 'partial';
+    if (isToday) cls += ' today';
+    if (!isFuture && data) {
+      totalOz += data.oz; count++;
+      if (streakOn && data.oz >= S.goal) streak++; else streakOn = false;
+    }
+    const el = document.createElement('div');
+    el.className = cls; el.textContent = d;
+    el.title = data ? `Day ${d}: ${data.oz} oz` : `Day ${d}`;
+    grid.appendChild(el);
+  }
+
+  document.getElementById('s-met').textContent = met;
+  document.getElementById('s-streak').textContent = streak;
+  document.getElementById('s-avg').textContent = count > 0 ? Math.round(totalOz/count) : 0;
+
+  const last = Math.min(7, dayNum);
+  const vals = [];
+  for (let i = 0; i < last; i++) {
+    const d = dayNum - last + i + 1;
+    const dt = new Date(S.startDate); dt.setDate(dt.getDate() + d - 1);
+    const k = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+    vals.push({ d, oz: (S.days[k]||{oz:0}).oz });
+  }
+  const maxOz = Math.max(...vals.map(v=>v.oz), S.goal, 1);
+  const bc = document.getElementById('bar-chart');
+  const bl = document.getElementById('bar-labels');
+  bc.innerHTML = ''; bl.innerHTML = '';
+  vals.forEach(({d, oz}) => {
+    const h = Math.round((oz/maxOz)*84);
+    const col = oz >= S.goal ? 'var(--teal)' : 'var(--blue)';
+    bc.innerHTML += `<div class="bar-col"><div class="bar-val">${oz>0?oz:''}</div><div class="bar-fill" style="height:${h}px;background:${col}"></div></div>`;
+    bl.innerHTML += `<div style="flex:1;text-align:center;font-size:10px;color:var(--hint)">D${d}</div>`;
+  });
+}
+
+// ─── Leaderboard UI ───────────────────────────────────────────────────────────
+async function updateLeaderboardUI() {
+  const participants = await sbLoadLeaderboard();
+  document.getElementById('lb-count').textContent = `${participants.length} ${participants.length===1?'person':'people'}`;
+
+  const myIdx = participants.findIndex(p => p.name === S.name);
+  const myRank = myIdx + 1;
+  const me = participants[myIdx] || { total_oz:0, days_met:0 };
+  document.getElementById('my-rank').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="font-size:32px;font-weight:700;color:var(--blue);letter-spacing:-1px">#${myRank||'—'}</div>
+      <div>
+        <div style="font-size:14px;font-weight:600">${S.name}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${me.total_oz||0} oz total · ${me.days_met||0} days met</div>
+      </div>
+    </div>`;
+
+  const medals = ['🥇','🥈','🥉'];
+  const list = document.getElementById('lb-list');
+  if (!participants.length) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--muted);text-align:center;padding:14px 0">No participants yet</div>';
+    return;
+  }
+  list.innerHTML = participants.map((p, i) => {
+    const [bg, fg] = colorFor(p.name);
+    const isMe = p.name === S.name;
+    const rank = i < 3 ? medals[i] : `#${i+1}`;
+    return `<div class="lb-row ${isMe?'is-me':''}">
+      <div class="lb-rank">${rank}</div>
+      <div class="lb-avatar" style="background:${bg};color:${fg}">${getInitials(p.name)}</div>
+      <div class="lb-info">
+        <div class="lb-name">${p.name}${isMe?' <span style="font-size:11px;color:var(--blue);font-weight:400">(you)</span>':''}</div>
+        <div class="lb-sub">${p.days_met} days met · goal: ${p.goal_oz} oz/day</div>
+      </div>
+      <div class="lb-score">
+        <div class="lb-score-n">${p.total_oz}</div>
+        <div class="lb-score-l">oz total</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Pane switching ───────────────────────────────────────────────────────────
+function showPane(p) {
+  ['today','progress','leaderboard'].forEach(t => {
+    document.getElementById('pane-'+t).style.display = t===p ? 'block' : 'none';
+    document.getElementById('tab-'+t).classList.toggle('active', t===p);
+  });
+  if (p === 'progress') updateProgressUI();
+  if (p === 'leaderboard') updateLeaderboardUI();
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+function init() {
+  initSupabase();
+  loadLocal();
+  document.getElementById('loading').classList.add('hidden');
+  if (S.name && S.startDate) {
+    const key = getTodayKey();
+    if (!S.days[key]) S.days[key] = { oz:0, log:[] };
+    showTrack();
+  } else {
+    document.getElementById('screen-setup').classList.add('active');
+  }
+}
+
+window.addEventListener('load', () => setTimeout(init, 400));
+</script>
+</body>
+</html>
